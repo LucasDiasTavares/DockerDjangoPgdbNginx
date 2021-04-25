@@ -1,0 +1,41 @@
+ersion: "3"
+
+services:
+  django:
+    restart: always
+    build: .
+    container_name: django
+    command: bash -c "python manage.py collectstatic --noinput && uwsgi --socket :8000 --master --enable-threads --module core.wsgi "
+    volumes:
+      - static_data:/vol/web
+    ports:
+      - "8000:8000"
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      - pgdb
+  pgdb:
+    restart: always
+    image: postgres
+    container_name: pgdb
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+    - pgdata:/var/lib/postgresql/data/
+  proxy:
+    restart: always
+    build: ./proxy
+    container_name: proxy
+    volumes:
+      - static_data:/vol/static
+    ports:
+    - "80:8080"
+    depends_on:
+      - django
+
+volumes:
+  static_data:
+  pgdata:
+
